@@ -57,19 +57,31 @@ describe('it-service-status', () => {
     expect(fetchMock).toHaveBeenCalledTimes(3)
   })
 
-  it('ignores a slow response that a newer one already replaced', async () => {
+  it('ignores a slow poll response once a newer poll has answered', async () => {
+    vi.useFakeTimers()
     let releaseSlow: ((r: Response) => void) | undefined
     const fetchMock = vi
       .fn()
       .mockImplementationOnce(() => new Promise<Response>((resolve) => (releaseSlow = resolve)))
       .mockResolvedValueOnce(jsonResponse([{ name: 'New', status: 'operational' }]))
     vi.stubGlobal('fetch', fetchMock)
-    const { container, element } = mount(definition, { statusurl: 'https://status.example.com/a' })
-    element.renderBlock(container)
-    await vi.waitFor(() => expect(container.querySelector('li')?.textContent).toContain('New'))
+    const { container, element } = mount(definition, { statusurl: 'https://status.example.com/a', refreshseconds: '30' })
+    await vi.advanceTimersByTimeAsync(30_000)
+    expect(container.querySelector('li')?.textContent).toContain('New')
     releaseSlow?.(jsonResponse([{ name: 'Old', status: 'outage' }]))
-    await new Promise((r) => setTimeout(r, 0))
+    await vi.advanceTimersByTimeAsync(0)
     expect(container.querySelector('li')?.textContent).toContain('New')
     element.unmountBlock(container)
+  })
+
+  it('does not draw a response that arrives after unmount', async () => {
+    let release: ((r: Response) => void) | undefined
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>((resolve) => (release = resolve))))
+    const { container, element } = mount(definition, { services: 'Mail | outage', statusurl: 'https://status.example.com/a' })
+    element.unmountBlock(container)
+    const before = container.innerHTML
+    release?.(jsonResponse([{ name: 'Late', status: 'operational' }]))
+    await new Promise((r) => setTimeout(r, 0))
+    expect(container.innerHTML).toBe(before)
   })
 })
