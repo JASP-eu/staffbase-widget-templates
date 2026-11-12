@@ -27,7 +27,9 @@ export function parseMenu(text: string): Dish[] {
   const dishes: Dish[] = []
   for (const line of text.split('\n')) {
     const [day, name, allergens] = line.split('|').map((p) => p.trim())
-    const weekday = DAYS[(day ?? '').toLowerCase()]
+    const key = (day ?? '').toLowerCase()
+    // hasOwn: a plain object would also answer "constructor" or "toString" with a function.
+    const weekday = Object.hasOwn(DAYS, key) ? DAYS[key] : undefined
     if (weekday === undefined || !name) continue
     dishes.push({
       day: weekday,

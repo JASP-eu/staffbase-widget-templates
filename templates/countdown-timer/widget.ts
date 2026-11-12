@@ -13,7 +13,7 @@ export interface Remaining {
   done: boolean
 }
 
-/** Splits the time left until `target` into units; `done` once the target has passed or is invalid. */
+/** Splits the time left until `target` into units; `done` once the target has passed. */
 export function remaining(target: Date, now: Date): Remaining {
   const ms = target.getTime() - now.getTime()
   if (!Number.isFinite(ms) || ms <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0, done: true }
@@ -35,6 +35,7 @@ const CSS = `
 .tpl-cd .num{display:block;font-size:1.6rem;font-weight:700;font-variant-numeric:tabular-nums}
 .tpl-cd .lbl{font-size:.75rem;opacity:.85}
 .tpl-cd .done{font-size:1.3rem;font-weight:600}
+.tpl-cd .err{color:#cf222e}
 `
 
 const factory: BlockFactory = (Base) =>
@@ -52,6 +53,11 @@ const factory: BlockFactory = (Base) =>
       container.replaceChildren(style(CSS), root)
       if (title) root.append(el('h3', { text: title }))
       root.append(units)
+      // A typo in the date must not announce that the event has arrived.
+      if (Number.isNaN(target.getTime())) {
+        units.replaceChildren(el('div', { className: 'err', text: 'Set a valid target date in the widget settings.' }))
+        return
+      }
 
       const tick = (): void => {
         const left = remaining(target, new Date())

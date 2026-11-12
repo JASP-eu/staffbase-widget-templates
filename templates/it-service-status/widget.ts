@@ -67,6 +67,7 @@ const CSS = `
 const factory: BlockFactory = (Base) =>
   class ItServiceStatus extends (Base as new () => BaseBlock) {
     private timer: ReturnType<typeof setInterval> | undefined
+    private generation = 0
 
     renderBlock(container: HTMLElement): void {
       this.stop()
@@ -102,13 +103,19 @@ const factory: BlockFactory = (Base) =>
       draw(fallback)
       if (!url) return
 
+      let latest = 0
+      const generation = this.generation
       const load = async (): Promise<void> => {
+        // A slow response must not overwrite a newer one, nor draw after unmount or re-render.
+        const request = ++latest
+        const current = (): boolean => request === latest && generation === this.generation
         try {
           const res = await fetch(url, { headers: { accept: 'application/json' } })
           if (!res.ok) throw new Error(`HTTP ${res.status}`)
-          draw(parseServiceJson(await res.json()))
+          const services = parseServiceJson(await res.json())
+          if (current()) draw(services)
         } catch (error) {
-          draw(fallback, `Live status unavailable (${error instanceof Error ? error.message : 'error'})`)
+          if (current()) draw(fallback, `Live status unavailable (${error instanceof Error ? error.message : 'error'})`)
         }
       }
       void load()
@@ -121,6 +128,7 @@ const factory: BlockFactory = (Base) =>
     }
 
     private stop(): void {
+      this.generation++
       if (this.timer !== undefined) clearInterval(this.timer)
       this.timer = undefined
     }

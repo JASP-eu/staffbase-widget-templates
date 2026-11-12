@@ -34,6 +34,12 @@ describe('weather-widget', () => {
     expect(fetchMock.mock.calls[0]?.[0]).toContain('forecast_days=2')
   })
 
+  it('shows an error when the forecast request fails', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({}, 503)))
+    const { container } = mount(definition, { latitude: '52.52', longitude: '13.405' })
+    await vi.waitFor(() => expect(container.querySelector('.err')?.textContent).toBe('Weather unavailable (HTTP 503)'))
+  })
+
   it('asks for coordinates instead of fetching when they are missing', () => {
     const fetchMock = vi.fn()
     vi.stubGlobal('fetch', fetchMock)

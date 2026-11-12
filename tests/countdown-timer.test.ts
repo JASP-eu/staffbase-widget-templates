@@ -12,7 +12,6 @@ describe('countdown-timer', () => {
       days: 1, hours: 1, minutes: 2, seconds: 3, done: false,
     })
     expect(remaining(new Date('2026-12-31T00:00:00Z'), now).done).toBe(true)
-    expect(remaining(new Date('not a date'), now).done).toBe(true)
   })
 
   it('renders and ticks down, then shows the done text', () => {
@@ -30,5 +29,11 @@ describe('countdown-timer', () => {
     vi.advanceTimersByTime(1000)
     expect(container.querySelector('.done')?.textContent).toBe('Live!')
     element.unmountBlock(container)
+  })
+
+  it('shows a settings hint instead of the done text for an invalid date', () => {
+    const { container } = mount(definition, { target: '2027-13-45', donetext: 'Live!' })
+    expect(container.querySelector('.err')?.textContent).toContain('valid target date')
+    expect(container.querySelector('.done')).toBeNull()
   })
 })

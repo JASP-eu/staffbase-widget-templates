@@ -4,7 +4,10 @@ import { definition, overall, parseServiceJson, parseServices } from '../templat
 import { jsonResponse, mount } from './harness.ts'
 
 describe('it-service-status', () => {
-  afterEach(() => vi.unstubAllGlobals())
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.useRealTimers()
+  })
 
   it('parses lines and treats unknown status as degraded', () => {
     expect(parseServices('Mail | operational\nVPN | broken\n\n')).toEqual([
@@ -38,5 +41,35 @@ describe('it-service-status', () => {
     await vi.waitFor(() => expect(second.container.querySelector('.err')?.textContent).toContain('HTTP 500'))
     expect(second.container.querySelector('li')?.textContent).toContain('Mail')
     second.element.unmountBlock(second.container)
+  })
+
+  it('stops polling on unmount and keeps one timer across re-renders', async () => {
+    vi.useFakeTimers()
+    const fetchMock = vi.fn().mockImplementation(async () => jsonResponse([]))
+    vi.stubGlobal('fetch', fetchMock)
+    const { container, element } = mount(definition, { statusurl: 'https://status.example.com/a', refreshseconds: '30' })
+    element.renderBlock(container)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    await vi.advanceTimersByTimeAsync(30_000)
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+    element.unmountBlock(container)
+    await vi.advanceTimersByTimeAsync(120_000)
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+  })
+
+  it('ignores a slow response that a newer one already replaced', async () => {
+    let releaseSlow: ((r: Response) => void) | undefined
+    const fetchMock = vi
+      .fn()
+      .mockImplementationOnce(() => new Promise<Response>((resolve) => (releaseSlow = resolve)))
+      .mockResolvedValueOnce(jsonResponse([{ name: 'New', status: 'operational' }]))
+    vi.stubGlobal('fetch', fetchMock)
+    const { container, element } = mount(definition, { statusurl: 'https://status.example.com/a' })
+    element.renderBlock(container)
+    await vi.waitFor(() => expect(container.querySelector('li')?.textContent).toContain('New'))
+    releaseSlow?.(jsonResponse([{ name: 'Old', status: 'outage' }]))
+    await new Promise((r) => setTimeout(r, 0))
+    expect(container.querySelector('li')?.textContent).toContain('New')
+    element.unmountBlock(container)
   })
 })
