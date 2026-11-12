@@ -1,0 +1,25 @@
+{
+  "name": "staffbase-widget-templates",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "description": "Small Staffbase custom widget templates built on the Staffbase Widget SDK.",
+  "scripts": {
+    "build": "bun scripts/build.ts",
+    "check-types": "tsc --noEmit",
+    "lint": "oxlint --deny-warnings shared templates scripts tests",
+    "test": "bun run build && vitest run",
+    "screenshots": "bun scripts/screenshots.ts"
+  },
+  "devDependencies": {
+    "@staffbase/widget-sdk": "3.19.9",
+    "@types/node": "26.6.6",
+    "happy-dom": "21.0.4",
+    "oxlint": "1.93.0",
+    "playwright-core": "1.65.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
+  }
+}

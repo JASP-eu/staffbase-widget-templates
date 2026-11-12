@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Widget template preview</title>
+    <style>
+      body { margin: 0; padding: 16px; background: #fff; font: 15px/1.4 system-ui, sans-serif; }
+      #slot { width: 420px; border: 1px solid #d0d7de; border-radius: 12px; overflow: hidden; }
+    </style>
+  </head>
+  <body>
+    <div id="slot"></div>
+    <script>
+      // Stand-in for the Staffbase page: receives the widget definition and renders it
+      // with the attributes passed in the URL hash (JSON), like a configured widget.
+      window.defineBlock = ({ blockDefinition }) => {
+        class Base extends HTMLElement {
+          renderBlock() {}
+        }
+        customElements.define(blockDefinition.name, blockDefinition.factory(Base, {}))
+        const element = document.createElement(blockDefinition.name)
+        const attributes = JSON.parse(decodeURIComponent(location.hash.slice(1) || '{}'))
+        for (const [key, value] of Object.entries(attributes)) element.setAttribute(key, value)
+        document.getElementById('slot').append(element)
+        element.renderBlock(element)
+      }
+      const script = document.createElement('script')
+      script.src = `../dist/${new URLSearchParams(location.search).get('t')}.js`
+      document.body.append(script)
+    </script>
+  </body>
+</html>
