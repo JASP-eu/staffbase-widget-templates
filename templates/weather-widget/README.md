@@ -14,7 +14,7 @@ Shows current weather and a forecast of up to 7 days for one location, using the
 | `latitude`, `longitude` | Coordinates of the location |
 | `days` | Number of forecast days, 1–7 |
 
-Open-Meteo's free API is for non-commercial use. Check the [Open-Meteo terms](https://open-meteo.com/en/terms) before using this template in a company intranet.
+Open-Meteo's free API is for non-commercial use only. Commercial use, which includes most company intranets, needs a paid Open-Meteo API plan: see the [Open-Meteo terms](https://open-meteo.com/en/terms) and [pricing](https://open-meteo.com/en/pricing). This template calls the free endpoint `api.open-meteo.com` without an API key; with a paid plan, change the URL in `widget.ts` to the endpoint and key Open-Meteo gives you.
 
 ## Use it
 
